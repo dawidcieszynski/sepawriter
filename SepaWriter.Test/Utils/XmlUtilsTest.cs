@@ -1,14 +1,13 @@
 ﻿using System.Text;
 using System.Xml;
-using NUnit.Framework;
+using Xunit;
 using Perrich.SepaWriter.Utils;
 
 namespace Perrich.SepaWriter.Test.Utils
 {
-    [TestFixture]
     public class XmlUtilsTest
     {
-        [Test]
+        [Fact]
         public void ShouldCreateXmlBicForAProvidedBic()
         {
             var xml = new XmlDocument();
@@ -16,10 +15,10 @@ namespace Perrich.SepaWriter.Test.Utils
             var el = (XmlElement)xml.AppendChild(xml.CreateElement("Document"));
 
             XmlUtils.CreateBic(el, new SepaIbanData { Bic="01234567" });
-            Assert.AreEqual("<FinInstnId><BIC>01234567</BIC></FinInstnId>", el.InnerXml);
+            Assert.Equal("<FinInstnId><BIC>01234567</BIC></FinInstnId>", el.InnerXml);
         }
 
-        [Test]
+        [Fact]
         public void ShouldCreateXmlUnknownBicForAnUnknwonBic()
         {
             var xml = new XmlDocument();
@@ -27,7 +26,7 @@ namespace Perrich.SepaWriter.Test.Utils
             var el = (XmlElement)xml.AppendChild(xml.CreateElement("Document"));
 
             XmlUtils.CreateBic(el, new SepaIbanData { UnknownBic = true});
-            Assert.AreEqual("<FinInstnId><Othr><Id>NOTPROVIDED</Id></Othr></FinInstnId>", el.InnerXml);
+            Assert.Equal("<FinInstnId><Othr><Id>NOTPROVIDED</Id></Othr></FinInstnId>", el.InnerXml);
         }
     }
 }

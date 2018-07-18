@@ -1,8 +1,7 @@
-﻿using NUnit.Framework;
+using Xunit;
 
 namespace Perrich.SepaWriter.Test
 {
-    [TestFixture]
     public class SepaCreditTransferTransactionTest
     {
         private const string Bic = "SOGEFRPPXXX";
@@ -10,21 +9,21 @@ namespace Perrich.SepaWriter.Test
         private const string Name = "A_NAME";
 
         private readonly SepaIbanData _iBanData = new SepaIbanData
-            {
-                Bic = Bic,
-                Iban = Iban,
-                Name = Name
-            };
+        {
+            Bic = Bic,
+            Iban = Iban,
+            Name = Name
+        };
 
-        [Test]
+        [Fact]
         public void ShouldHaveADefaultCurrency()
         {
             var data = new SepaCreditTransferTransaction();
 
-            Assert.AreEqual("EUR", data.Currency);
+            Assert.Equal("EUR", data.Currency);
         }
 
-        [Test]
+        [Fact]
         public void ShouldKeepProvidedData()
         {
             const decimal amount = 100m;
@@ -34,40 +33,41 @@ namespace Perrich.SepaWriter.Test
             const string remittanceInformation = "Sample";
 
             var data = new SepaCreditTransferTransaction
-                {
-                    Creditor = _iBanData,
-                    Amount = amount,
-                    Currency = currency,
-                    Id = id,
-                    EndToEndId = endToEndId,
-                    RemittanceInformation = remittanceInformation
-                };
+            {
+                Creditor = _iBanData,
+                Amount = amount,
+                Currency = currency,
+                Id = id,
+                EndToEndId = endToEndId,
+                RemittanceInformation = remittanceInformation
+            };
 
-            Assert.AreEqual(currency, data.Currency);
-            Assert.AreEqual(amount, data.Amount);
-            Assert.AreEqual(id, data.Id);
-            Assert.AreEqual(endToEndId, data.EndToEndId);
-            Assert.AreEqual(remittanceInformation, data.RemittanceInformation);
-            Assert.AreEqual(Bic, data.Creditor.Bic);
-            Assert.AreEqual(Iban, data.Creditor.Iban);
+            Assert.Equal(currency, data.Currency);
+            Assert.Equal(amount, data.Amount);
+            Assert.Equal(id, data.Id);
+            Assert.Equal(endToEndId, data.EndToEndId);
+            Assert.Equal(remittanceInformation, data.RemittanceInformation);
+            Assert.Equal(Bic, data.Creditor.Bic);
+            Assert.Equal(Iban, data.Creditor.Iban);
 
             var data2 = data.Clone() as SepaCreditTransferTransaction;
 
             Assert.NotNull(data2);
-            Assert.AreEqual(currency, data2.Currency);
-            Assert.AreEqual(amount, data2.Amount);
-            Assert.AreEqual(id, data2.Id);
-            Assert.AreEqual(endToEndId, data2.EndToEndId);
-            Assert.AreEqual(remittanceInformation, data2.RemittanceInformation);
-            Assert.AreEqual(Bic, data2.Creditor.Bic);
-            Assert.AreEqual(Iban, data2.Creditor.Iban);
+            Assert.Equal(currency, data2.Currency);
+            Assert.Equal(amount, data2.Amount);
+            Assert.Equal(id, data2.Id);
+            Assert.Equal(endToEndId, data2.EndToEndId);
+            Assert.Equal(remittanceInformation, data2.RemittanceInformation);
+            Assert.Equal(Bic, data2.Creditor.Bic);
+            Assert.Equal(Iban, data2.Creditor.Iban);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectInvalidCreditor()
         {
-            Assert.That(() => { new SepaCreditTransferTransaction { Creditor = new SepaIbanData() }; },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").Contains("Creditor IBAN data are invalid."));            
+            var exception = Assert.Throws<SepaRuleException>(() => { new SepaCreditTransferTransaction { Creditor = new SepaIbanData() }; });
+
+            Assert.Contains("Creditor IBAN data are invalid.", exception.Message);
         }
     }
 }

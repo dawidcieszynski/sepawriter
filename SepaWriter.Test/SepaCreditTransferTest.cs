@@ -1,20 +1,19 @@
 ﻿using System;
 using System.IO;
 using System.Xml;
-using NUnit.Framework;
 using Perrich.SepaWriter.Utils;
+using Xunit;
 
 namespace Perrich.SepaWriter.Test
 {
-    [TestFixture]
-    public class SepaCreditTransferTest
+    public class SepaCreditTransferTest : IDisposable
     {
         private static readonly SepaIbanData Debtor = new SepaIbanData
-            {
-                Bic = "SOGEFRPPXXX",
-                Iban = "FR7030002005500000157845Z02",
-                Name = "My Corp"
-            };
+        {
+            Bic = "SOGEFRPPXXX",
+            Iban = "FR7030002005500000157845Z02",
+            Name = "My Corp"
+        };
 
         private readonly string FILENAME = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "/sepa_credit_test_result.xml";
 
@@ -63,14 +62,13 @@ namespace Perrich.SepaWriter.Test
             return transfert;
         }
 
-        [OneTimeTearDownAttribute]
-        public void Cleanup()
+        public void Dispose()
         {
             if (File.Exists(FILENAME))
                 File.Delete(FILENAME);
         }
 
-        [Test]
+        [Fact]
         public void ShouldAllowMultipleNullIdTransations()
         {
             const decimal amount = 23.45m;
@@ -81,7 +79,7 @@ namespace Perrich.SepaWriter.Test
             transfert.AddCreditTransfer(CreateTransaction(null, amount, "Transaction description 2"));
         }
 
-        [Test]
+        [Fact]
         public void ShouldAllowTransactionWithoutRemittanceInformation()
         {
             var transfert = GetEmptyCreditTransfert();
@@ -92,7 +90,7 @@ namespace Perrich.SepaWriter.Test
             Assert.False(result.Contains("<RmtInf>"));
         }
 
-        [Test]
+        [Fact]
         public void ShouldKeepEndToEndIdIfSet()
         {
             const decimal amount = 23.45m;
@@ -113,7 +111,7 @@ namespace Perrich.SepaWriter.Test
             Assert.True(result.Contains("<EndToEndId>endToendId2</EndToEndId>"));
         }
 
-        [Test]
+        [Fact]
         public void ShouldManageMultipleTransactionsTransfer()
         {
             var transfert = new SepaCreditTransfer
@@ -150,16 +148,16 @@ namespace Perrich.SepaWriter.Test
                 RemittanceInformation = "Transaction description 3"
             });
 
-            const decimal total = (amount + amount2 + amount3)*100;
+            const decimal total = (amount + amount2 + amount3) * 100;
 
-            Assert.AreEqual(total, transfert.HeaderControlSumInCents);
-            Assert.AreEqual(total, transfert.PaymentControlSumInCents);
+            Assert.Equal(total, transfert.HeaderControlSumInCents);
+            Assert.Equal(total, transfert.PaymentControlSumInCents);
 
-            Assert.AreEqual(MULTIPLE_ROW_RESULT, transfert.AsXmlString());
+            Assert.Equal(MULTIPLE_ROW_RESULT, transfert.AsXmlString());
         }
 
 
-        [Test]
+        [Fact]
         public void ShouldValidateThePain00100103XmlSchema()
         {
             var transfert = new SepaCreditTransfer
@@ -200,7 +198,7 @@ namespace Perrich.SepaWriter.Test
             validator.Validate(transfert.AsXmlString());
         }
 
-        [Test]
+        [Fact]
         public void ShouldValidateThePain00100104XmlSchema()
         {
             var transfert = new SepaCreditTransfer
@@ -242,27 +240,27 @@ namespace Perrich.SepaWriter.Test
             validator.Validate(transfert.AsXmlString());
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectNotAllowedXmlSchema()
         {
-            Assert.That(() => { new SepaCreditTransfer { Schema = SepaSchema.Pain00800102 }; },
-                Throws.TypeOf<ArgumentException>().With.Property("Message").Contains("schema is not allowed!"));
+            var exception = Assert.Throws<ArgumentException>(() => { new SepaCreditTransfer { Schema = SepaSchema.Pain00800102 }; });
+            Assert.Contains("schema is not allowed!", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldManageOneTransactionTransfer()
         {
             const decimal amount = 23.45m;
             SepaCreditTransfer transfert = GetOneTransactionCreditTransfert(amount);
 
-            const decimal total = amount*100;
-            Assert.AreEqual(total, transfert.HeaderControlSumInCents);
-            Assert.AreEqual(total, transfert.PaymentControlSumInCents);
+            const decimal total = amount * 100;
+            Assert.Equal(total, transfert.HeaderControlSumInCents);
+            Assert.Equal(total, transfert.PaymentControlSumInCents);
 
-            Assert.AreEqual(ONE_ROW_RESULT, transfert.AsXmlString());
+            Assert.Equal(ONE_ROW_RESULT, transfert.AsXmlString());
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectIfNoDebtor()
         {
             var transfert = new SepaCreditTransfer
@@ -273,27 +271,30 @@ namespace Perrich.SepaWriter.Test
             };
             transfert.AddCreditTransfer(CreateTransaction("Transaction Id 1", 100m, "Transaction description"));
 
-            Assert.That(() => { transfert.AsXmlString(); }, Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("The debtor is mandatory."));            
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AsXmlString(); });
+            Assert.Contains("The debtor is mandatory.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectIfNoInitiatingPartyName()
         {
             SepaCreditTransfer transfert = GetOneTransactionCreditTransfert(100m);
             transfert.InitiatingPartyName = null;
 
-            Assert.That(() => { transfert.AsXmlString(); }, Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("The initial party name is mandatory."));
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AsXmlString(); });
+            Assert.Contains("The initial party name is mandatory.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectIfNoMessageIdentification()
         {
             SepaCreditTransfer transfert = GetOneTransactionCreditTransfert(100m);
             transfert.MessageIdentification = null;
-            Assert.That(() => { transfert.AsXmlString(); }, Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("The message identification is mandatory."));
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AsXmlString(); });
+            Assert.Contains("The message identification is mandatory.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldUseMessageIdentificationAsPaymentInfoIdIfNotDefined()
         {
             SepaCreditTransfer transfert = GetOneTransactionCreditTransfert(100m);
@@ -301,56 +302,60 @@ namespace Perrich.SepaWriter.Test
 
             string result = transfert.AsXmlString();
 
-            Assert.True(result.Contains("<PmtInfId>"+ transfert.MessageIdentification + "</PmtInfId>"));
+            Assert.True(result.Contains("<PmtInfId>" + transfert.MessageIdentification + "</PmtInfId>"));
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectIfNoTransaction()
         {
             var transfert = new SepaCreditTransfer
-                {
-                    MessageIdentification = "transferID",
-                    PaymentInfoId = "paymentInfo",
-                    InitiatingPartyName = "Me",
-                    Debtor = Debtor
-                };
+            {
+                MessageIdentification = "transferID",
+                PaymentInfoId = "paymentInfo",
+                InitiatingPartyName = "Me",
+                Debtor = Debtor
+            };
 
-            Assert.That(() => { transfert.AsXmlString(); }, Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("At least one transaction is needed in a transfer."));
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AsXmlString(); });
+            Assert.Contains("At least one transaction is needed in a transfer.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectInvalidDebtor()
         {
-            Assert.That(() => { new SepaCreditTransfer { Debtor = new SepaIbanData() }; }, Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("Debtor IBAN data are invalid."));
-            
+            var exception = Assert.Throws<SepaRuleException>(() => { new SepaCreditTransfer { Debtor = new SepaIbanData() }; });
+            Assert.Contains("Debtor IBAN data are invalid.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectDebtorWithoutBic()
         {
             var iban = (SepaIbanData)Debtor.Clone();
             iban.UnknownBic = true;
-            
-            Assert.That(() => { new SepaCreditTransfer { Debtor = iban }; }, Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("Debtor IBAN data are invalid."));
+
+            var exception = Assert.Throws<SepaRuleException>(() => { new SepaCreditTransfer { Debtor = iban }; });
+            Assert.Contains("Debtor IBAN data are invalid.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectNullTransactionTransfer()
         {
             var transfert = new SepaCreditTransfer();
-            
-            Assert.That(() => { transfert.AddCreditTransfer(null); }, Throws.TypeOf<ArgumentNullException>().With.Property("Message").Contains("transfer"));
+
+            var exception = Assert.Throws<ArgumentNullException>(() => { transfert.AddCreditTransfer(null); });
+            Assert.Contains("transfer", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectTwoTransationsWithSameId()
         {
             SepaCreditTransfer transfert = GetOneTransactionCreditTransfert(100m);
             transfert.AddCreditTransfer(CreateTransaction("UniqueId", 23.45m, "Transaction description 2"));
-            Assert.That(() => { transfert.AddCreditTransfer(CreateTransaction("UniqueId", 23.45m, "Transaction description 2")); }, Throws.TypeOf<SepaRuleException>().With.Property("Message").Contains("must be unique in a transfer"));
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AddCreditTransfer(CreateTransaction("UniqueId", 23.45m, "Transaction description 2")); });
+            Assert.Contains("must be unique in a transfer", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectTwoTransationsWithSameEndToEndId()
         {
             const decimal amount = 23.45m;
@@ -361,10 +366,11 @@ namespace Perrich.SepaWriter.Test
             transfert.AddCreditTransfer(trans);
             trans = CreateTransaction("Transaction Id 3", 23.45m, "Transaction description 2");
             trans.EndToEndId = "uniqueValue";
-            Assert.That(() => { transfert.AddCreditTransfer(trans); }, Throws.TypeOf<SepaRuleException>().With.Property("Message").Contains("must be unique in a transfer"));            
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AddCreditTransfer(trans); });
+            Assert.Contains("must be unique in a transfer", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldSaveCreditInXmlFile()
         {
             const decimal amount = 23.45m;
@@ -375,15 +381,15 @@ namespace Perrich.SepaWriter.Test
             var doc = new XmlDocument();
             doc.Load(FILENAME);
 
-            Assert.AreEqual(ONE_ROW_RESULT, doc.OuterXml);
+            Assert.Equal(ONE_ROW_RESULT, doc.OuterXml);
         }
 
 
-        [Test]
+        [Fact]
         public void ShouldUseEuroAsDefaultCurrency()
         {
             var transfert = new SepaCreditTransfer();
-            Assert.AreEqual("EUR", transfert.DebtorAccountCurrency);
+            Assert.Equal("EUR", transfert.DebtorAccountCurrency);
         }
     }
 }

@@ -1,11 +1,10 @@
 ﻿using System.Text;
 using System.Xml;
-using NUnit.Framework;
+using Xunit;
 using Perrich.SepaWriter.Utils;
 
 namespace Perrich.SepaWriter.Test.Utils
 {
-    [TestFixture]
     public class XmlElementExtensionTest
     {
         private const string name = "sample";
@@ -20,7 +19,7 @@ namespace Perrich.SepaWriter.Test.Utils
             return (XmlElement) document.AppendChild(document.CreateElement("Document"));
         }
 
-        [Test]
+        [Fact]
         public void ShouldAddMultipleOrderedNewElement()
         {
             var element = Prepare();
@@ -28,43 +27,43 @@ namespace Perrich.SepaWriter.Test.Utils
             var el2 = element.NewElement(name2);
             var el3 = element.NewElement(name3);
             Assert.True(element.HasChildNodes);
-            Assert.AreEqual(3, element.ChildNodes.Count);
-            Assert.AreEqual(el, element.FirstChild);
-            Assert.AreEqual(el2, element.ChildNodes[1]);
-            Assert.AreEqual(el3, element.LastChild);
+            Assert.Equal(3, element.ChildNodes.Count);
+            Assert.Equal(el, element.FirstChild);
+            Assert.Equal(el2, element.ChildNodes[1]);
+            Assert.Equal(el3, element.LastChild);
         }
 
-        [Test]
+        [Fact]
         public void ShouldAddNewElementWithAValue()
         {
             var element = Prepare();
             var el = element.NewElement(name, value);
-            Assert.AreEqual(name, el.Name);
-            Assert.AreEqual(value.ToString(), el.InnerText);
+            Assert.Equal(name, el.Name);
+            Assert.Equal(value.ToString(), el.InnerText);
             Assert.True(element.HasChildNodes);
-            Assert.AreEqual(1, element.ChildNodes.Count);
+            Assert.Equal(1, element.ChildNodes.Count);
         }
 
-        [Test]
+        [Fact]
         public void ShouldAddNewElementWithoutValue()
         {
             var element = Prepare();
             var el = element.NewElement(name);
-            Assert.AreEqual(name, el.Name);
-            Assert.IsEmpty(el.InnerText);
+            Assert.Equal(name, el.Name);
+            Assert.Empty(el.InnerText);
             Assert.True(element.HasChildNodes);
-            Assert.AreEqual(1, element.ChildNodes.Count);
+            Assert.Equal(1, element.ChildNodes.Count);
         }
 
-        [Test]
+        [Fact]
         public void ShouldAddNewElementExplicitlyWithoutValue()
         {
             var element = Prepare();
             var el = element.NewElement(name, null);
-            Assert.AreEqual(name, el.Name);
-            Assert.IsEmpty(el.InnerText);
+            Assert.Equal(name, el.Name);
+            Assert.Empty(el.InnerText);
             Assert.True(element.HasChildNodes);
-            Assert.AreEqual(1, element.ChildNodes.Count);
+            Assert.Equal(1, element.ChildNodes.Count);
         }
     }
 }

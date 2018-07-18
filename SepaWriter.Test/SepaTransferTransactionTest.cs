@@ -1,36 +1,35 @@
-﻿using NUnit.Framework;
+﻿using Xunit;
 
 namespace Perrich.SepaWriter.Test
 {
-    [TestFixture]
     public class SepaTransferTransactionTest
     {
-        [Test]
+        [Fact]
         public void ShouldRejectAmountGreaterOrEqualsThan1000000000()
         {
-            Assert.That(() => { new SepaCreditTransferTransaction { Amount = 1000000000 }; },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").Contains("Invalid amount value"));            
+            var exception = Assert.Throws<SepaRuleException>(() => { new SepaCreditTransferTransaction { Amount = 1000000000 }; });
+            Assert.Contains("Invalid amount value", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectAmountLessThan1Cents()
         {
-            Assert.That(() => { new SepaCreditTransferTransaction { Amount = 0 }; },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").Contains("Invalid amount value"));
+            var exception = Assert.Throws<SepaRuleException>(() => { new SepaCreditTransferTransaction { Amount = 0 }; });
+            Assert.Contains("Invalid amount value", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectAmountWithMoreThan2Decimals()
         {
-            Assert.That(() => { new SepaCreditTransferTransaction { Amount = 12.012m }; },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").Contains("Amount should have at most 2 decimals"));
+            var exception = Assert.Throws<SepaRuleException>(() => { new SepaCreditTransferTransaction { Amount = 12.012m }; });
+            Assert.Contains("Amount should have at most 2 decimals", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectEndToEndIdGreaterThan35()
         {
-            Assert.That(() => { new SepaCreditTransferTransaction { EndToEndId = "012345678901234567890123456789012345" }; },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").Contains("cannot be greater than 35"));
+            var exception = Assert.Throws<SepaRuleException>(() => { new SepaCreditTransferTransaction { EndToEndId = "012345678901234567890123456789012345" }; });
+            Assert.Contains("cannot be greater than 35", exception.Message);
         }
     }
 }

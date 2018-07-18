@@ -1,20 +1,19 @@
 ﻿using System;
 using System.IO;
-using NUnit.Framework;
 using Perrich.SepaWriter.Utils;
 using System.Xml;
+using Xunit;
 
 namespace Perrich.SepaWriter.Test
 {
-    [TestFixture]
-    public class SepaDebitTransferTest
+    public class SepaDebitTransferTest : IDisposable
     {
         private static readonly SepaIbanData Creditor = new SepaIbanData
-            {
-                Bic = "SOGEFRPPXXX",
-                Iban = "FR7030002005500000157845Z02",
-                Name = "My Corp"
-            };
+        {
+            Bic = "SOGEFRPPXXX",
+            Iban = "FR7030002005500000157845Z02",
+            Name = "My Corp"
+        };
 
         private readonly string FILENAME = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "/sepa_debit_test_result.xml";
 
@@ -23,7 +22,7 @@ namespace Perrich.SepaWriter.Test
 
         private const string MULTIPLE_ROW_RESULT =
             "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?><Document xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.008.001.02\"><CstmrDrctDbtInitn><GrpHdr><MsgId>transferID</MsgId><CreDtTm>2013-02-17T22:38:12</CreDtTm><NbOfTxs>3</NbOfTxs><CtrlSum>63.36</CtrlSum><InitgPty><Nm>Me</Nm></InitgPty></GrpHdr><PmtInf><PmtInfId>paymentInfo</PmtInfId><PmtMtd>DD</PmtMtd><NbOfTxs>3</NbOfTxs><CtrlSum>63.36</CtrlSum><PmtTpInf><SvcLvl><Cd>SEPA</Cd></SvcLvl><LclInstrm><Cd>CORE</Cd></LclInstrm><SeqTp>OOFF</SeqTp></PmtTpInf><ReqdColltnDt>2013-02-18</ReqdColltnDt><Cdtr><Nm>My Corp</Nm></Cdtr><CdtrAcct><Id><IBAN>FR7030002005500000157845Z02</IBAN></Id><Ccy>EUR</Ccy></CdtrAcct><CdtrAgt><FinInstnId><BIC>SOGEFRPPXXX</BIC></FinInstnId></CdtrAgt><ChrgBr>SLEV</ChrgBr><CdtrSchmeId><Id><PrvtId><Othr><Id /><SchmeNm><Prtry>SEPA</Prtry></SchmeNm></Othr></PrvtId></Id></CdtrSchmeId><DrctDbtTxInf><PmtId><InstrId>Transaction Id 1</InstrId><EndToEndId>multiple1</EndToEndId></PmtId><InstdAmt Ccy=\"EUR\">23.45</InstdAmt><DrctDbtTx><MndtRltdInf><MndtId>First mandate</MndtId><DtOfSgntr>2012-12-07</DtOfSgntr></MndtRltdInf></DrctDbtTx><DbtrAgt><FinInstnId><BIC>AGRIFRPPXXX</BIC></FinInstnId></DbtrAgt><Dbtr><Nm>THEIR_NAME</Nm></Dbtr><DbtrAcct><Id><IBAN>FR1420041010050500013M02606</IBAN></Id></DbtrAcct><RmtInf><Ustrd>Transaction description</Ustrd></RmtInf></DrctDbtTxInf><DrctDbtTxInf><PmtId><InstrId>Transaction Id 2</InstrId><EndToEndId>paymentInfo/2</EndToEndId></PmtId><InstdAmt Ccy=\"EUR\">12.56</InstdAmt><DrctDbtTx><MndtRltdInf><MndtId>First mandate</MndtId><DtOfSgntr>2012-12-07</DtOfSgntr></MndtRltdInf></DrctDbtTx><DbtrAgt><FinInstnId><BIC>AGRIFRPPXXX</BIC></FinInstnId></DbtrAgt><Dbtr><Nm>THEIR_NAME</Nm></Dbtr><DbtrAcct><Id><IBAN>FR1420041010050500013M02606</IBAN></Id></DbtrAcct><RmtInf><Ustrd>Transaction description 2</Ustrd></RmtInf></DrctDbtTxInf><DrctDbtTxInf><PmtId><InstrId>Transaction Id 3</InstrId><EndToEndId>paymentInfo/3</EndToEndId></PmtId><InstdAmt Ccy=\"EUR\">27.35</InstdAmt><DrctDbtTx><MndtRltdInf><MndtId /><DtOfSgntr>0001-01-01</DtOfSgntr></MndtRltdInf></DrctDbtTx><DbtrAgt><FinInstnId><BIC>BANK_BIC</BIC></FinInstnId></DbtrAgt><Dbtr><Nm>NAME</Nm></Dbtr><DbtrAcct><Id><IBAN>ACCOUNT_IBAN_SAMPLE</IBAN></Id></DbtrAcct><RmtInf><Ustrd>Transaction description 3</Ustrd></RmtInf></DrctDbtTxInf></PmtInf></CstmrDrctDbtInitn></Document>";
-        
+
         private static SepaDebitTransferTransaction CreateTransaction(string id, decimal amount, string information)
         {
             return new SepaDebitTransferTransaction
@@ -59,18 +58,17 @@ namespace Perrich.SepaWriter.Test
         {
             var transfert = GetEmptyDebitTransfert();
             transfert.InitiatingPartyId = "MyId";
-            transfert.AddDebitTransfer(CreateTransaction("Transaction Id 1",amount,"Transaction description"));
+            transfert.AddDebitTransfer(CreateTransaction("Transaction Id 1", amount, "Transaction description"));
             return transfert;
         }
 
-        [OneTimeTearDownAttribute]
-        public void Cleanup()
+        public void Dispose()
         {
             if (File.Exists(FILENAME))
                 File.Delete(FILENAME);
         }
 
-        [Test]
+        [Fact]
         public void ShouldAllowMultipleNullIdTransations()
         {
             const decimal amount = 23.45m;
@@ -78,37 +76,37 @@ namespace Perrich.SepaWriter.Test
             SepaDebitTransfer transfert = GetOneTransactionDebitTransfert(amount);
 
             transfert.AddDebitTransfer(new SepaDebitTransferTransaction
+            {
+                Id = null,
+                Debtor = new SepaIbanData
                 {
-                    Id = null,
-                    Debtor = new SepaIbanData
-                        {
-                            Bic = "AGRIFRPPXXX",
-                            Iban = "FR1420041010050500013M02606",
-                            Name = "THEIR_NAME"
-                        },
-                    Amount = amount,
-                    RemittanceInformation = "Transaction description 1",
-                    MandateIdentification = "mandate 1",
-                    DateOfSignature = new DateTime(2010, 12, 7),
-                });
+                    Bic = "AGRIFRPPXXX",
+                    Iban = "FR1420041010050500013M02606",
+                    Name = "THEIR_NAME"
+                },
+                Amount = amount,
+                RemittanceInformation = "Transaction description 1",
+                MandateIdentification = "mandate 1",
+                DateOfSignature = new DateTime(2010, 12, 7),
+            });
 
             transfert.AddDebitTransfer(new SepaDebitTransferTransaction
+            {
+                Id = null,
+                Debtor = new SepaIbanData
                 {
-                    Id = null,
-                    Debtor = new SepaIbanData
-                        {
-                            Bic = "AGRIFRPPXXX",
-                            Iban = "FR1420041010050500013M02606",
-                            Name = "THEIR_NAME"
-                        },
-                    Amount = amount,
-                    RemittanceInformation = "Transaction description 2",
-                    MandateIdentification = "mandate 2",
-                    DateOfSignature = new DateTime(2011, 12, 7),
-                });
+                    Bic = "AGRIFRPPXXX",
+                    Iban = "FR1420041010050500013M02606",
+                    Name = "THEIR_NAME"
+                },
+                Amount = amount,
+                RemittanceInformation = "Transaction description 2",
+                MandateIdentification = "mandate 2",
+                DateOfSignature = new DateTime(2011, 12, 7),
+            });
         }
 
-        [Test]
+        [Fact]
         public void ShouldKeepEndToEndIdIfSet()
         {
             const decimal amount = 23.45m;
@@ -129,18 +127,18 @@ namespace Perrich.SepaWriter.Test
             Assert.True(result.Contains("<EndToEndId>endToendId2</EndToEndId>"));
         }
 
-        [Test]
+        [Fact]
         public void ShouldManageMultipleTransactionsTransfer()
         {
             var transfert = new SepaDebitTransfer
-                {
-                    CreationDate = new DateTime(2013, 02, 17, 22, 38, 12),
-                    RequestedExecutionDate = new DateTime(2013, 02, 18),
-                    MessageIdentification = "transferID",
-                    PaymentInfoId = "paymentInfo",
-                    InitiatingPartyName = "Me",
-                    Creditor = Creditor
-                };
+            {
+                CreationDate = new DateTime(2013, 02, 17, 22, 38, 12),
+                RequestedExecutionDate = new DateTime(2013, 02, 18),
+                MessageIdentification = "transferID",
+                PaymentInfoId = "paymentInfo",
+                InitiatingPartyName = "Me",
+                Creditor = Creditor
+            };
 
             const decimal amount = 23.45m;
             var trans = CreateTransaction("Transaction Id 1", amount, "Transaction description");
@@ -153,28 +151,28 @@ namespace Perrich.SepaWriter.Test
 
             const decimal amount3 = 27.35m;
             transfert.AddDebitTransfer(new SepaDebitTransferTransaction
+            {
+                Id = "Transaction Id 3",
+                Debtor = new SepaIbanData
                 {
-                    Id = "Transaction Id 3",
-                    Debtor = new SepaIbanData
-                        {
-                            Bic = "BANK_BIC",
-                            Iban = "ACCOUNT_IBAN_SAMPLE",
-                            Name = "NAME"
-                        },
-                    Amount = amount3,
-                    RemittanceInformation = "Transaction description 3"
-                });
+                    Bic = "BANK_BIC",
+                    Iban = "ACCOUNT_IBAN_SAMPLE",
+                    Name = "NAME"
+                },
+                Amount = amount3,
+                RemittanceInformation = "Transaction description 3"
+            });
 
-            const decimal total = (amount + amount2 + amount3)*100;
+            const decimal total = (amount + amount2 + amount3) * 100;
 
-            Assert.AreEqual(total, transfert.HeaderControlSumInCents);
-            Assert.AreEqual(total, transfert.PaymentControlSumInCents);
+            Assert.Equal(total, transfert.HeaderControlSumInCents);
+            Assert.Equal(total, transfert.PaymentControlSumInCents);
 
-            Assert.AreEqual(MULTIPLE_ROW_RESULT, transfert.AsXmlString());
-            
+            Assert.Equal(MULTIPLE_ROW_RESULT, transfert.AsXmlString());
+
         }
 
-        [Test]
+        [Fact]
         public void ShouldValidateThePain00800102XmlSchema()
         {
             var transfert = new SepaDebitTransfer
@@ -214,7 +212,7 @@ namespace Perrich.SepaWriter.Test
             validator.Validate(transfert.AsXmlString());
         }
 
-        [Test]
+        [Fact]
         public void ShouldValidateThePain00800103XmlSchema()
         {
             var transfert = new SepaDebitTransfer
@@ -255,27 +253,30 @@ namespace Perrich.SepaWriter.Test
             validator.Validate(transfert.AsXmlString());
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectNotAllowedXmlSchema()
         {
-            Assert.That(() => { new SepaDebitTransfer { Schema = SepaSchema.Pain00100103 }; },
-                Throws.TypeOf<ArgumentException>().With.Property("Message").Contains("schema is not allowed!"));
+            var exception = Assert.Throws<ArgumentException>(() =>
+            {
+                new SepaDebitTransfer { Schema = SepaSchema.Pain00100103 };
+            });
+            Assert.Contains("schema is not allowed!", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldManageOneTransactionTransfer()
         {
             const decimal amount = 23.45m;
             SepaDebitTransfer transfert = GetOneTransactionDebitTransfert(amount);
 
-            const decimal total = amount*100;
-            Assert.AreEqual(total, transfert.HeaderControlSumInCents);
-            Assert.AreEqual(total, transfert.PaymentControlSumInCents);
+            const decimal total = amount * 100;
+            Assert.Equal(total, transfert.HeaderControlSumInCents);
+            Assert.Equal(total, transfert.PaymentControlSumInCents);
 
-            Assert.AreEqual(ONE_ROW_RESULT, transfert.AsXmlString());
+            Assert.Equal(ONE_ROW_RESULT, transfert.AsXmlString());
         }
 
-        [Test]
+        [Fact]
         public void ShouldAllowTransactionWithoutRemittanceInformation()
         {
             var transfert = GetEmptyDebitTransfert();
@@ -286,40 +287,39 @@ namespace Perrich.SepaWriter.Test
             Assert.False(result.Contains("<RmtInf>"));
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectIfNoCreditor()
         {
             var transfert = new SepaDebitTransfer
-                {
-                    MessageIdentification = "transferID",
-                    PaymentInfoId = "paymentInfo",
-                    InitiatingPartyName = "Me"
-                };
+            {
+                MessageIdentification = "transferID",
+                PaymentInfoId = "paymentInfo",
+                InitiatingPartyName = "Me"
+            };
             transfert.AddDebitTransfer(CreateTransaction("Transaction Id 1", 100m, "Transaction description"));
-            Assert.That(() => { transfert.AsXmlString(); },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("The creditor is mandatory."));
-            
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AsXmlString(); });
+            Assert.Contains("The creditor is mandatory.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectIfNoInitiatingPartyName()
         {
             SepaDebitTransfer transfert = GetOneTransactionDebitTransfert(100m);
             transfert.InitiatingPartyName = null;
-            Assert.That(() => { transfert.AsXmlString(); },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("The initial party name is mandatory."));
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AsXmlString(); });
+            Assert.Contains("The initial party name is mandatory.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectIfNoMessageIdentification()
         {
             SepaDebitTransfer transfert = GetOneTransactionDebitTransfert(100m);
             transfert.MessageIdentification = null;
-            Assert.That(() => { transfert.AsXmlString(); },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("The message identification is mandatory."));
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AsXmlString(); });
+            Assert.Contains("The message identification is mandatory.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldUseMessageIdentificationAsPaymentInfoIdIfNotDefined()
         {
             SepaDebitTransfer transfert = GetOneTransactionDebitTransfert(100m);
@@ -327,77 +327,76 @@ namespace Perrich.SepaWriter.Test
 
             string result = transfert.AsXmlString();
 
-            Assert.True(result.Contains("<PmtInfId>"+ transfert.MessageIdentification + "</PmtInfId>"));
+            Assert.True(result.Contains("<PmtInfId>" + transfert.MessageIdentification + "</PmtInfId>"));
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectIfNoTransaction()
         {
             var transfert = new SepaDebitTransfer
-                {
-                    MessageIdentification = "transferID",
-                    PaymentInfoId = "paymentInfo",
-                    InitiatingPartyName = "Me",
-                    Creditor = Creditor
-                };
+            {
+                MessageIdentification = "transferID",
+                PaymentInfoId = "paymentInfo",
+                InitiatingPartyName = "Me",
+                Creditor = Creditor
+            };
 
-            Assert.That(() => { transfert.AsXmlString(); },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("At least one transaction is needed in a transfer."));
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AsXmlString(); });
+            Assert.Contains("At least one transaction is needed in a transfer.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectInvalidCreditor()
         {
-            Assert.That(() => { new SepaDebitTransfer { Creditor = new SepaIbanData() }; },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("Creditor IBAN data are invalid."));            
+            var exception = Assert.Throws<SepaRuleException>(() => { new SepaDebitTransfer { Creditor = new SepaIbanData() }; });
+            Assert.Contains("Creditor IBAN data are invalid.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectCreditorWithoutBic()
         {
             var iban = (SepaIbanData)Creditor.Clone();
             iban.UnknownBic = true;
-            Assert.That(() => { new SepaDebitTransfer { Creditor = iban }; },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").EqualTo("Creditor IBAN data are invalid."));
-            
+            var exception = Assert.Throws<SepaRuleException>(() => { new SepaDebitTransfer { Creditor = iban }; });
+            Assert.Contains("Creditor IBAN data are invalid.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectNullTransactionTransfer()
         {
             var transfert = new SepaDebitTransfer();
 
-            
-            Assert.That(() => { transfert.AddDebitTransfer(null); },
-                Throws.TypeOf<ArgumentNullException>().With.Property("Message").Contains("transfer"));
+
+            var exception = Assert.Throws<ArgumentNullException>(() => { transfert.AddDebitTransfer(null); });
+            Assert.Contains("transfer", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectTwoTransationsWithSameId()
         {
             SepaDebitTransfer transfert = GetOneTransactionDebitTransfert(100m);
             var debit = CreateTransaction("Transaction Id 1", 23.45m, "Transaction description 2");
 
-            Assert.That(() => { transfert.AddDebitTransfer(debit); },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").Contains("must be unique in a transfer"));
+            var exception = Assert.Throws<SepaRuleException>(() => { transfert.AddDebitTransfer(debit); });
+            Assert.Contains("must be unique in a transfer", exception.Message);
         }
-        
-        [Test]
+
+        [Fact]
         public void ShouldUseADefaultCurrency()
         {
             var transfert = new SepaDebitTransfer();
-            Assert.AreEqual("EUR", transfert.CreditorAccountCurrency);
+            Assert.Equal("EUR", transfert.CreditorAccountCurrency);
         }
 
-        [Test]
+        [Fact]
         public void ShouldUseADefaultLocalInstrumentCode()
         {
             var transfert = new SepaDebitTransfer();
-            Assert.AreEqual("CORE", transfert.LocalInstrumentCode);
+            Assert.Equal("CORE", transfert.LocalInstrumentCode);
         }
 
 
-        [Test]
+        [Fact]
         public void ShouldSaveDebitInXmlFile()
         {
             const decimal amount = 23.45m;
@@ -408,7 +407,7 @@ namespace Perrich.SepaWriter.Test
             var doc = new XmlDocument();
             doc.Load(FILENAME);
 
-            Assert.AreEqual(ONE_ROW_RESULT, doc.OuterXml);
+            Assert.Equal(ONE_ROW_RESULT, doc.OuterXml);
         }
     }
 }

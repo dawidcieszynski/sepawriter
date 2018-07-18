@@ -1,50 +1,49 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 using Perrich.SepaWriter.Utils;
 
 namespace Perrich.SepaWriter.Test.Utils
 {
-    [TestFixture]
     public class StringUtilsTest
     {
         private const string FirstPart = "012345678";
 
-        [Test]
+        [Fact]
         public void ShouldTruncateATooLongString()
         {
             const string str = FirstPart + "9" + "another part";
-            Assert.AreEqual(FirstPart + "9", StringUtils.GetLimitedString(str, 10));
+            Assert.Equal(FirstPart + "9", StringUtils.GetLimitedString(str, 10));
         }
 
-        [Test]
+        [Fact]
         public void ShouldNotTruncateSmallString()
         {
-            Assert.AreEqual(FirstPart, StringUtils.GetLimitedString(FirstPart, 10));
+            Assert.Equal(FirstPart, StringUtils.GetLimitedString(FirstPart, 10));
             Assert.Null(StringUtils.GetLimitedString(null, 10));
         }
 
-        [Test]
+        [Fact]
         public void ShouldNotTruncateNullString()
         {
             Assert.Null(StringUtils.GetLimitedString(null, 10));
         }
 
-        [Test]
+        [Fact]
         public void ShouldFormatADate()
         {
             var date = new DateTime(2013, 11, 27);
-            Assert.AreEqual("2013-11-27T00:00:00", StringUtils.FormatDateTime(date));
+            Assert.Equal("2013-11-27T00:00:00", StringUtils.FormatDateTime(date));
         }
 
-        [Test]
+        [Fact]
         public void ShouldCleanUpString()
         {
-            Assert.AreEqual(FirstPart, StringUtils.RemoveInvalidChar(FirstPart));
+            Assert.Equal(FirstPart, StringUtils.RemoveInvalidChar(FirstPart));
 
             var allowedChars = "@/-?:(). ,'\"+";
-            Assert.AreEqual(allowedChars, StringUtils.RemoveInvalidChar(allowedChars));
+            Assert.Equal(allowedChars, StringUtils.RemoveInvalidChar(allowedChars));
 
-            Assert.AreEqual("EAEU", StringUtils.RemoveInvalidChar("éàèù"));
+            Assert.Equal("EAEU", StringUtils.RemoveInvalidChar("éàèù"));
         }
     }
 }

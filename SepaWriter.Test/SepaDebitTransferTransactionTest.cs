@@ -1,9 +1,8 @@
 ﻿using System;
-using NUnit.Framework;
+using Xunit;
 
 namespace Perrich.SepaWriter.Test
 {
-    [TestFixture]
     public class SepaDebitTransferTransactionTest
     {
         private const string Bic = "SOGEFRPPXXX";
@@ -11,21 +10,21 @@ namespace Perrich.SepaWriter.Test
         private const string Name = "A_NAME";
 
         private readonly SepaIbanData iBanData = new SepaIbanData
-            {
-                Bic = Bic,
-                Iban = Iban,
-                Name = Name
-            };
+        {
+            Bic = Bic,
+            Iban = Iban,
+            Name = Name
+        };
 
-        [Test]
+        [Fact]
         public void ShouldHaveADefaultCurrency()
         {
             var data = new SepaDebitTransferTransaction();
 
-            Assert.AreEqual("EUR", data.Currency);
+            Assert.Equal("EUR", data.Currency);
         }
 
-        [Test]
+        [Fact]
         public void ShouldKeepProvidedData()
         {
             const decimal amount = 100m;
@@ -38,57 +37,57 @@ namespace Perrich.SepaWriter.Test
             var seqType = SepaSequenceType.FIRST;
 
             var data = new SepaDebitTransferTransaction
-                {
-                    Debtor = iBanData,
-                    Amount = amount,
-                    Currency = currency,
-                    Id = id,
-                    EndToEndId = endToEndId,
-                    RemittanceInformation = remittanceInformation,
-                    DateOfSignature = signatureDate,
-                    MandateIdentification = mandateId,
-                    SequenceType = SepaSequenceType.FIRST
-                };
+            {
+                Debtor = iBanData,
+                Amount = amount,
+                Currency = currency,
+                Id = id,
+                EndToEndId = endToEndId,
+                RemittanceInformation = remittanceInformation,
+                DateOfSignature = signatureDate,
+                MandateIdentification = mandateId,
+                SequenceType = SepaSequenceType.FIRST
+            };
 
-            Assert.AreEqual(currency, data.Currency);
-            Assert.AreEqual(amount, data.Amount);
-            Assert.AreEqual(id, data.Id);
-            Assert.AreEqual(endToEndId, data.EndToEndId);
-            Assert.AreEqual(remittanceInformation, data.RemittanceInformation);
-            Assert.AreEqual(Bic, data.Debtor.Bic);
-            Assert.AreEqual(Iban, data.Debtor.Iban);
-            Assert.AreEqual(Iban, data.Debtor.Iban);
-            Assert.AreEqual(mandateId, data.MandateIdentification);
-            Assert.AreEqual(signatureDate, data.DateOfSignature);
-            Assert.AreEqual(seqType, data.SequenceType);
+            Assert.Equal(currency, data.Currency);
+            Assert.Equal(amount, data.Amount);
+            Assert.Equal(id, data.Id);
+            Assert.Equal(endToEndId, data.EndToEndId);
+            Assert.Equal(remittanceInformation, data.RemittanceInformation);
+            Assert.Equal(Bic, data.Debtor.Bic);
+            Assert.Equal(Iban, data.Debtor.Iban);
+            Assert.Equal(Iban, data.Debtor.Iban);
+            Assert.Equal(mandateId, data.MandateIdentification);
+            Assert.Equal(signatureDate, data.DateOfSignature);
+            Assert.Equal(seqType, data.SequenceType);
 
             var data2 = data.Clone() as SepaDebitTransferTransaction;
 
             Assert.NotNull(data2);
-            Assert.AreEqual(currency, data2.Currency);
-            Assert.AreEqual(amount, data2.Amount);
-            Assert.AreEqual(id, data2.Id);
-            Assert.AreEqual(endToEndId, data2.EndToEndId);
-            Assert.AreEqual(remittanceInformation, data2.RemittanceInformation);
-            Assert.AreEqual(Bic, data2.Debtor.Bic);
-            Assert.AreEqual(Iban, data2.Debtor.Iban);
-            Assert.AreEqual(mandateId, data2.MandateIdentification);
-            Assert.AreEqual(signatureDate, data2.DateOfSignature);
-            Assert.AreEqual(seqType, data2.SequenceType);
+            Assert.Equal(currency, data2.Currency);
+            Assert.Equal(amount, data2.Amount);
+            Assert.Equal(id, data2.Id);
+            Assert.Equal(endToEndId, data2.EndToEndId);
+            Assert.Equal(remittanceInformation, data2.RemittanceInformation);
+            Assert.Equal(Bic, data2.Debtor.Bic);
+            Assert.Equal(Iban, data2.Debtor.Iban);
+            Assert.Equal(mandateId, data2.MandateIdentification);
+            Assert.Equal(signatureDate, data2.DateOfSignature);
+            Assert.Equal(seqType, data2.SequenceType);
         }
 
-        [Test]
+        [Fact]
         public void ShouldRejectInvalidDebtor()
         {
-            Assert.That(() => { new SepaDebitTransferTransaction { Debtor = new SepaIbanData() }; },
-                Throws.TypeOf<SepaRuleException>().With.Property("Message").Contains("Debtor IBAN data are invalid."));
+            var exception = Assert.Throws<SepaRuleException>(() => { new SepaDebitTransferTransaction { Debtor = new SepaIbanData() }; });
+            Assert.Contains("Debtor IBAN data are invalid.", exception.Message);
         }
 
-        [Test]
+        [Fact]
         public void ShouldUseADefaultSequenceType()
         {
             var transfert = new SepaDebitTransferTransaction();
-            Assert.AreEqual(SepaSequenceType.OOFF, transfert.SequenceType);
+            Assert.Equal(SepaSequenceType.OOFF, transfert.SequenceType);
         }
     }
 }
